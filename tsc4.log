@@ -1,0 +1,81 @@
+
+
+#
+# Fatal error in , line 0
+# Fatal process out of memory: Zone
+<--- Last few GCs --->
+
+[11380:000002D4B192C8C0]    12617 ms: Scavenge 467.3 (492.1) -> 456.7 (494.6) MB, 5.14 / 0.00 ms  (average mu = 0.997, current mu = 0.997) allocation failure; 
+[11380:000002D4B192C8C0]    12824 ms: Scavenge 470.2 (495.0) -> 459.6 (497.7) MB, 6.11 / 0.00 ms  (average mu = 0.997, current mu = 0.997) allocation failure; 
+[11380:000002D4B192C8C0]    13046 ms: Scavenge 473.1 (497.7) -> 461.4 (500.5) MB, 6.74 / 0.00 ms  (average mu = 0.997, current mu = 0.997) allocation failure; 
+
+
+<--- JS stacktrace --->
+
+
+#
+#
+#
+#FailureMessage Object: 000000F1FC1F5420
+FATAL ERROR: Zone Allocation failed - process out of memory
+
+
+#
+# Fatal error in , line 0
+# Fatal process out of memory: Zone----- Native stack trace -----
+
+
+#
+#
+#
+#FailureMessage Object: 000000F1FD9F5F00
+
+#
+# Fatal error in , line 0
+# 
+Fatal process out of memory: Zone----- Native stack trace -----
+
+
+#
+#
+#
+#FailureMessage Object: 000000F1FC9F6260----- Native stack trace -----
+
+
+----- Native stack trace -----
+
+ 1: 00007FF6DAED892B 
+ 1: 00007FF6DAED892B 
+ 2: 00007FF6DADCCE2F 
+ 2: 00007FF6DAE48868 
+ 3: 00007FF6DBCE2442 
+ 3: 00007FF6DB8C2C71 
+ 4: 00007FF6DB8AC1D3 
+ 4: 00007FF6DB8AC3C8 
+ 5: 00007FF6DB38EBF4 
+ 5: 00007FF6DB38EBF4 
+ 6: 00007FF6DBDD73E3 
+ 6: 00007FF6DB1B5950 
+ 7: 00007FF6DBEF1326 
+ 7: 00007FF6DBD1DCC7 
+ 8: 00007FF6DBEF0E3D 
+ 8: 00007FF6DBCFE419 
+ 9: 00007FF6DBEF4498 
+ 9: 00007FF6DBD9CB06 
+10: 00007FF6DBEF3C8A 
+10: 00007FF6DBD9EC8F 
+11: 00007FF6DBEF7ADB 
+11: 00007FF6DBDA77E4 
+12: 00007FF6DBEF2229 
+12: 00007FF6DBD1F586 
+13: 00007FF6DBEF32E2 
+13: 00007FF6DB8197EE 
+14: 00007FF6DBDAA8F2 
+14: 00007FF6DB81D0AC 
+15: 00007FF6DBDA835C 
+15: 00007FF6DB817EA5 
+16: 00007FF6DBDA3FAA 
+16: 00007FF6DB3F96FE 
+17: 00007FF67B91AAFA 
+17: 00007FF6DB81A9E1 
+18: 00007FF6DB7E7901 

@@ -267,22 +267,35 @@ export class CustomProvider extends BaseProvider {
 
   /** OpenAI 文生图：POST /images/generations（JSON） */
   private async generateImageOpenAi(options: ImageOptions): Promise<ImageResult> {
+    // 只发 OpenAI 标准图片字段；negative_prompt/seed/guidance_scale 等是第三方扩展，
+    // 部分兼容网关（如 Agnes 类）只实现标准子集，主动发送会触发笼统的 invalid arguments。
+    // 用户确有需要时，可把这些字段放进 Model.extra（escape hatch）随请求透传。
     const body: Record<string, unknown> = {
       model: options.modelId,
       prompt: options.prompt,
       n: options.count ?? 1,
-      size: options.width && options.height ? `${options.width}x${options.height}` : undefined,
-      ...(options.negativePrompt ? { negative_prompt: options.negativePrompt } : {}),
-      ...(options.guidanceScale != null ? { guidance_scale: options.guidanceScale } : {}),
-      ...(options.seed != null ? { seed: options.seed } : {}),
-      ...options.extra,
     }
+    if (options.width && options.height) {
+      body.size = normalizeImageSize(options.width, options.height)
+    }
+    if (options.extra) Object.assign(body, options.extra)
 
-    const response = await this.request<OpenAIImageResponse>('/images/generations', {
-      method: 'POST',
-      body,
-      timeout: 120000,
-    })
+    let response: OpenAIImageResponse
+    try {
+      response = await this.request<OpenAIImageResponse>('/images/generations', {
+        method: 'POST',
+        body,
+        timeout: 120000,
+      })
+    } catch (e) {
+      // 诊断增强：网关只回笼统的 "invalid arguments" 时不指明哪个字段，把实际请求体回显出来，
+      // 便于在客户端报错里看到完整 payload，精准定位不兼容的字段（无需反复打包猜测）。
+      if (e instanceof ProviderError) {
+        e.message += ` | request-body=${JSON.stringify(body)}`
+        throw e
+      }
+      throw e
+    }
 
     const imageUrls = (response.data ?? [])
       .map((d) => d.url ?? (d.b64_json ? `data:image/png;base64,${d.b64_json}` : undefined))
@@ -308,7 +321,7 @@ export class CustomProvider extends BaseProvider {
     form.append('model', options.modelId)
     form.append('prompt', options.prompt)
     form.append('n', String(options.count ?? 1))
-    if (options.width && options.height) form.append('size', `${options.width}x${options.height}`)
+    if (options.width && options.height) form.append('size', normalizeImageSize(options.width, options.height))
     // gpt-image-* 系列用数组字段 image[]；多数兼容网关两者都收
     form.append('image[]', blob, filename)
     if (options.negativePrompt) form.append('negative_prompt', options.negativePrompt)
