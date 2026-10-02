@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomPlatformSettings } from "@/components/custom-platform-settings";
+import { CustomPlatformSettings, type ProviderTestState } from "@/components/custom-platform-settings";
 import { useModelCatalog } from "@/lib/hooks/use-model-catalog";
 import { ModelCatalogStatus } from "@/components/model-catalog-status";
 import { useState, useEffect } from "react";
@@ -301,7 +301,7 @@ export default function SettingsPage() {
   };
 
   // AI platform key connectivity test (real auth probe, not a fake test)
-  const [providerTest, setProviderTest] = useState<Record<string, { state: "idle" | "testing" | "ok" | "invalid" | "unknown"; msg?: string }>>({});
+  const [providerTest, setProviderTest] = useState<Record<string, ProviderTestState>>({});
   const testProvider = async (key: string) => {
     const p = providers[key];
     if (!p?.apiKey) return;

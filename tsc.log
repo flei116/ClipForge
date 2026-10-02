@@ -1,0 +1,10 @@
+src/app/settings/page.tsx(608,17): error TS2322: Type 'Record<string, { state: "ok" | "unknown" | "invalid" | "idle" | "testing"; msg?: string | undefined; }>' is not assignable to type 'Record<string, ProviderTestState | undefined>'.
+  'string' index signatures are incompatible.
+    Type '{ state: "ok" | "unknown" | "invalid" | "idle" | "testing"; msg?: string | undefined; }' is not assignable to type 'ProviderTestState | undefined'.
+      Type '{ state: "ok" | "unknown" | "invalid" | "idle" | "testing"; msg?: string | undefined; }' is not assignable to type '{ state: "idle" | "testing"; } | { state: "ok" | "unknown" | "invalid"; msg: string; }'.
+        Type '{ state: "ok" | "unknown" | "invalid" | "idle" | "testing"; msg?: string | undefined; }' is not assignable to type '{ state: "ok" | "unknown" | "invalid"; msg: string; }'.
+          Types of property 'state' are incompatible.
+            Type '"ok" | "unknown" | "invalid" | "idle" | "testing"' is not assignable to type '"ok" | "unknown" | "invalid"'.
+              Type '"idle"' is not assignable to type '"ok" | "unknown" | "invalid"'.
+src/components/custom-platform-settings.tsx(294,29): error TS2339: Property 'msg' does not exist on type 'ProviderTestState'.
+  Property 'msg' does not exist on type '{ state: "idle" | "testing"; }'.

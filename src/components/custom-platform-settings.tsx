@@ -29,9 +29,10 @@ import { isCustomPlatform, useSettingsStore, type ProviderSetting } from "@/lib/
 import { useT } from "@/lib/i18n";
 
 /** Key 连通性测试结果（与设置页内置平台卡片共用同一状态形状） */
-export type ProviderTestState =
-  | { state: "idle" | "testing" }
-  | { state: "ok" | "invalid" | "unknown"; msg: string };
+export type ProviderTestState = {
+  state: "idle" | "testing" | "ok" | "invalid" | "unknown";
+  msg?: string;
+};
 
 export function CustomPlatformSettings({
   providerTest,
@@ -291,7 +292,7 @@ function CustomPlatformCard({
               const icon = r.state === "ok" ? "✓" : r.state === "invalid" ? "✗" : "⚠";
               return (
                 <span className={`text-xs ${color}`}>
-                  {icon} {r.msg}
+                  {icon} {r.msg ?? ""}
                 </span>
               );
             })()}
