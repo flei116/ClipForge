@@ -491,7 +491,10 @@ export class CustomProvider extends BaseProvider {
 
     if (kind === 'image') {
       const o = options as ImageOptions
-      if (o.width && o.height) base.size = `${o.width}x${o.height}`
+      // 很多 OpenAI 兼容网关（如 Agnes 类）要求 size 为 "auto" 或 "WIDTHxHEIGHT"，
+      // 且宽高都必须是 32 的倍数、落在 [512,4096]、长宽比 ≤3:1。ClipForge 素材页选的
+      // 尺寸（如 1280x720、1920x1080）往往不满足，直接拼会触发 400。这里规整后再传。
+      if (o.width && o.height) base.size = normalizeImageSize(o.width, o.height)
       if (o.count != null) base.n = o.count
       const refs = [o.referenceImageUrl, ...(o.referenceImageUrls ?? [])].filter((u): u is string => Boolean(u))
       if (refs.length) base.image = refs
@@ -538,6 +541,21 @@ export class CustomProvider extends BaseProvider {
 }
 
 // ==================== 模块级工具函数 ====================
+
+/**
+ * 规整图片尺寸，满足大多数 OpenAI 兼容网关对 size 的硬约束：
+ * 宽高均为 32 的倍数、落在 [512,4096]、长宽比不超过 3:1。
+ * 无法规整（如入参非法）时回退到 OpenAI 标准档 1024x1024（1024 是 32 的倍数，合法）。
+ */
+function normalizeImageSize(w: number, h: number): string {
+  const round32 = (n: number) => Math.max(512, Math.min(4096, Math.ceil(n / 32) * 32));
+  let W = round32(w);
+  let H = round32(h);
+  // 限制长宽比在 [1:3, 3:1] 之间
+  while (W / H > 3) W = round32(H * 3);
+  while (H / W > 3) H = round32(W * 3);
+  return `${W}x${H}`;
+}
 
 function extFromMime(mime: string): string {
   if (mime.includes('webp')) return 'webp'
