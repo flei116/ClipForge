@@ -14,7 +14,7 @@ import { sanitizeGenerationControlSummary } from "@/lib/video-repair-plan";
 // so the client can resume via /api/ai/video/task instead of paying again.
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { provider: providerName, model, prompt, imageUrl, lastImageUrl, mode, apiKey, baseUrl, options, projectId, shotId, referenceVideoUrls, referenceImageUrls, referenceAudioUrls } = body;
+  const { provider: providerName, model, prompt, imageUrl, lastImageUrl, mode, apiKey, baseUrl, protocol, options, projectId, shotId, referenceVideoUrls, referenceImageUrls, referenceAudioUrls } = body;
   const controlPlan = sanitizeGenerationControlSummary(body.controlPlan);
 
   if (!providerName || !model) {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const provider = createProvider({ name: providerName, apiKey, baseUrl });
+    const provider = createProvider({ name: providerName, apiKey, baseUrl, ...(protocol ? { extra: { protocol } } : {}) });
 
     const firstFrameUrl = await toRemoteUsableImage(imageUrl);
     // Keyframe chaining: pin the clip's last frame to the next

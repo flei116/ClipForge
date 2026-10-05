@@ -513,9 +513,13 @@ export class CustomProvider extends BaseProvider {
       if (refs.length) base.image = refs
     } else {
       const o = options as VideoOptions
+      // 不再发顶层 width/height：实测部分 OpenAI 兼容网关（含异步任务类）会直接以
+      // "width is a forbidden field" 拒绝这两个字段。统一改用 size（规整后的
+      // WxH），并在能推出比例时附一个 aspect_ratio 兜底；确有需要可用 Model.extra 覆盖。
       if (o.width && o.height) {
-        base.width = o.width
-        base.height = o.height
+        base.size = normalizeImageSize(o.width, o.height)
+        const ratio = aspectRatioOf(o.width, o.height)
+        if (ratio) base.aspect_ratio = ratio
       }
       if (o.duration != null) base.duration = o.duration
       if (o.fps != null) base.fps = o.fps
@@ -568,6 +572,36 @@ function normalizeImageSize(w: number, h: number): string {
   while (W / H > 3) W = round32(H * 3);
   while (H / W > 3) H = round32(W * 3);
   return `${W}x${H}`;
+}
+
+/**
+ * 把任意宽高归成最接近的常见比例字符串（如 "9:16" / "16:9" / "1:1"）。
+ * 找不到足够接近的就返回 undefined——宁可不发 aspect_ratio，也不要发一个错的。
+ */
+function aspectRatioOf(w: number, h: number): string | undefined {
+  if (!w || !h) return undefined
+  const candidates: Array<[string, number]> = [
+    ['1:1', 1],
+    ['16:9', 16 / 9],
+    ['9:16', 9 / 16],
+    ['4:3', 4 / 3],
+    ['3:4', 3 / 4],
+    ['3:2', 3 / 2],
+    ['2:3', 2 / 3],
+    ['21:9', 21 / 9],
+  ]
+  const target = w / h
+  let best: string | undefined
+  let bestDiff = Infinity
+  for (const [label, value] of candidates) {
+    const diff = Math.abs(value - target)
+    if (diff < bestDiff) {
+      bestDiff = diff
+      best = label
+    }
+  }
+  // 只有落在 2% 相对误差内才认，否则不猜
+  return best != null && bestDiff / target < 0.02 ? best : undefined
 }
 
 function extFromMime(mime: string): string {

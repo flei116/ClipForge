@@ -54,12 +54,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return apiError(req, "无效的项目ID", "Invalid project id", 400);
     }
     const body = await req.json();
-    const { scriptId, provider: providerName, model, apiKey, baseUrl, options, characterSheetUrl, dryRun, spendCapUsd, acknowledgeOverCap } = body as {
+    const { scriptId, provider: providerName, model, apiKey, baseUrl, protocol, options, characterSheetUrl, dryRun, spendCapUsd, acknowledgeOverCap } = body as {
       scriptId?: string;
       provider?: string;
       model?: string;
       apiKey?: string;
       baseUrl?: string;
+      /** 自定义平台（方案 B）：用户在设置里选的协议 */
+      protocol?: string;
       options?: Record<string, unknown>;
       /** Presenter's multi-view sheet — leads reference_images as the identity anchor (@Image1) */
       characterSheetUrl?: string;
@@ -211,7 +213,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // lip-sync guardrail (advisory, never blocks): overstuffed lines drift out of sync near the
     // end of a segment — surfaced so the UI/CLI can suggest trimming before the paid generation
     const dialogueWarnings = dialogueDensityWarnings(shots);
-    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "" });
+    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "", ...(protocol ? { extra: { protocol } } : {}) });
 
     const opts = (options ?? {}) as { width?: number; height?: number };
     const videoOptions = {

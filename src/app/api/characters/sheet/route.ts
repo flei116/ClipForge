@@ -18,13 +18,15 @@ import { apiError, errText } from "@/lib/api-error";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { appearance, name, provider: providerName, model, apiKey, baseUrl, options } = body as {
+    const { appearance, name, provider: providerName, model, apiKey, baseUrl, protocol, options } = body as {
       appearance?: string;
       name?: string;
       provider?: string;
       model?: string;
       apiKey?: string;
       baseUrl?: string;
+      /** 自定义平台（方案 B）：用户在设置里选的协议 */
+      protocol?: string;
       options?: Record<string, unknown>;
     };
     if (!appearance?.trim()) {
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = buildCharacterSheetPrompt(appearance.trim(), name);
-    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "" });
+    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "", ...(protocol ? { extra: { protocol } } : {}) });
     const result = await provider.generateImage({
       ...(options ?? {}),
       modelId: model,

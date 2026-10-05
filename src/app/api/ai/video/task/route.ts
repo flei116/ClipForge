@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return apiError(req, "请求体必须是 JSON 对象", "Request body must be a JSON object", 400);
   }
-  const { provider: providerName, apiKey, baseUrl, taskId, wait } = body;
+  const { provider: providerName, apiKey, baseUrl, protocol, taskId, wait } = body;
 
   if (!providerName || !taskId) {
     return apiError(req, "缺少必要参数（provider / taskId）", "Missing required parameters (provider / taskId)");
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     s === "completed" ? "completed" : s === "failed" || s === "cancelled" ? "failed" : "processing";
 
   try {
-    const provider = createProvider({ name: providerName, apiKey, baseUrl });
+    const provider = createProvider({ name: providerName, apiKey, baseUrl, ...(protocol ? { extra: { protocol } } : {}) });
 
     try {
       const status = wait && provider.waitForTask

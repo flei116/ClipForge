@@ -65,12 +65,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return apiError(req, "无效的项目ID", "Invalid project id", 400);
     }
     const body = await req.json();
-    const { scriptId, provider: providerName, model, apiKey, baseUrl, options, characterSheetUrl, productImageUrl } = body as {
+    const { scriptId, provider: providerName, model, apiKey, baseUrl, protocol, options, characterSheetUrl, productImageUrl } = body as {
       scriptId?: string;
       provider?: string;
       model?: string;
       apiKey?: string;
       baseUrl?: string;
+      /** 自定义平台（方案 B）：用户在设置里选的协议 */
+      protocol?: string;
       options?: Record<string, unknown>;
       /** Presenter's multi-view sheet — locks the person's identity across all nine cells */
       characterSheetUrl?: string;
@@ -116,7 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       characterSheet: !!characterSheetUrl,
       productImage: !!productImageUrl,
     });
-    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "" });
+    const provider = createProvider({ name: providerName, apiKey, baseUrl: baseUrl ?? "", ...(protocol ? { extra: { protocol } } : {}) });
     const result = await provider.generateImage({
       ...(options ?? {}),
       modelId: model,

@@ -71,6 +71,8 @@ interface ImageModelTarget {
   apiKey: string;
   baseUrl?: string;
   supportsAudio?: boolean;
+  /** 自定义平台（方案 B）：用户在设置里选的协议，必须随请求带给服务端 provider */
+  protocol?: string;
 }
 
 // persisted cloud AI task row (from /api/ai/tasks, issue #16 recovery flow)
@@ -161,12 +163,12 @@ export default function AssetsPage() {
   const enabledCatalogProviders = Object.entries(providers).filter(([, p]) => p.enabled && p.apiKey).map(([name, p]) => ({ name, apiKey: p.apiKey, baseUrl: p.baseUrl }));
   const catalog = useModelCatalog(enabledCatalogProviders);
   const [modelTarget, videoModelTarget] = useMemo((): [ImageModelTarget | null, ImageModelTarget | null] => {
-    const enabled = Object.entries(providers).filter(([, p]) => p.enabled && p.apiKey).map(([name, p]) => ({ name, apiKey: p.apiKey, baseUrl: p.baseUrl }));
+    const enabled = Object.entries(providers).filter(([, p]) => p.enabled && p.apiKey).map(([name, p]) => ({ name, apiKey: p.apiKey, baseUrl: p.baseUrl, protocol: p.protocol }));
     const names = new Set(enabled.map((p) => p.name));
     const resolve = (type: "image" | "video", modelId: string) => {
       const model = mergeCustomModels(catalog.models.filter((item) => item.mediaType === type), customModels, type, names).find((item) => item.id === modelId);
       const provider = model && enabled.find((item) => item.name === model.provider);
-      return model && provider ? { provider: provider.name, model: modelId, apiKey: provider.apiKey, baseUrl: provider.baseUrl, supportsAudio: model.supportsAudio } : null;
+      return model && provider ? { provider: provider.name, model: modelId, apiKey: provider.apiKey, baseUrl: provider.baseUrl, protocol: provider.protocol, supportsAudio: model.supportsAudio } : null;
     };
     return [resolve("image", defaultImageModel), resolve("video", defaultVideoModel)];
   }, [providers, customModels, defaultImageModel, defaultVideoModel, catalog.models]);
@@ -658,6 +660,7 @@ export default function AssetsPage() {
             model: videoModelTarget.model,
             apiKey: videoModelTarget.apiKey,
             baseUrl: videoModelTarget.baseUrl,
+            ...(videoModelTarget.protocol ? { protocol: videoModelTarget.protocol } : {}),
             mode: controlPlan.mode,
             prompt: finalPrompt,
             ...(controlPlan.firstFrameUrl && { imageUrl: controlPlan.firstFrameUrl }),
@@ -787,6 +790,7 @@ export default function AssetsPage() {
             model: genModel,
             apiKey: modelTarget.apiKey,
             baseUrl: modelTarget.baseUrl,
+            ...(modelTarget.protocol ? { protocol: modelTarget.protocol } : {}),
             mode: genMode,
             prompt: genPrompt,
             ...(useProductSafe && { imageUrl: productImages[0] }),
@@ -859,6 +863,7 @@ export default function AssetsPage() {
           model: hasRefs ? toEditVariant(modelTarget.model) : modelTarget.model,
           apiKey: modelTarget.apiKey,
           baseUrl: modelTarget.baseUrl,
+          ...(modelTarget.protocol ? { protocol: modelTarget.protocol } : {}),
           ...(presenterSheet && { characterSheetUrl: presenterSheet }),
           ...(productRef && { productImageUrl: productRef }),
           // the grid itself is 9:16 so each of the 3x3 cells is exactly 9:16 too
@@ -920,6 +925,7 @@ export default function AssetsPage() {
           acknowledgeOverCap: true, // the card already required an explicit confirm on this estimate
           apiKey: videoModelTarget.apiKey,
           baseUrl: videoModelTarget.baseUrl,
+          ...(videoModelTarget.protocol ? { protocol: videoModelTarget.protocol } : {}),
           // presenter sheet leads reference_images as the identity anchor (@Image1)
           ...(presenterSheet && { characterSheetUrl: presenterSheet }),
           options: buildVideoOptions(videoParams ? { ...videoParams, aspectRatio: "9:16" } : undefined),
