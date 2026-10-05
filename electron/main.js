@@ -2,7 +2,7 @@
 // Key points (all validated through real packaging tests):
 //  - Data is written to app.getPath('userData')/data (writable), injected into the server via APP_DATA_DIR (standalone cwd is read-only)
 //  - ffmpeg/ffprobe use bundled binaries, injected via FFMPEG_PATH/FFPROBE_PATH (no ffmpeg install required on the user's machine)
-//  - Acquire a free port (not hardcoded to 3000), poll HTTP until ready before loadURL, kill child process on exit
+//  - Use a STABLE local port, poll HTTP until ready before loadURL, kill child process on exit
 const { app, BrowserWindow, dialog } = require("electron");
 const { fork } = require("child_process");
 const http = require("http");
@@ -15,6 +15,12 @@ let mainWindow = null;
 let childExited = false; // set once the server child errors/exits, so waitReady can fail fast instead of polling a dead port
 let childExitInfo = "";
 let logFilePath = "";
+
+// The renderer persists user settings in localStorage via zustand persist. localStorage is keyed by
+// page ORIGIN, which includes the port — so a randomly chosen port gives the app a different origin
+// on every launch, making every saved setting (platform API keys, custom platforms, model defaults)
+// appear to vanish after a restart. The port must therefore be stable; see acquirePort().
+const PREFERRED_PORT = 3210;
 
 /** Prepare the diagnostics log file (truncated once per launch). Startup failures on a packaged GUI app are otherwise invisible — there is no console — so everything funnels here. */
 function initLog() {
@@ -48,15 +54,41 @@ function readLogTail(maxChars = 3000) {
   }
 }
 
-/** Find a free local port */
-function getFreePort() {
-  return new Promise((resolve, reject) => {
+/** Try to bind a specific port on 127.0.0.1; resolves the port on success, null when it is taken. */
+function tryPort(port) {
+  return new Promise((resolve) => {
     const srv = net.createServer();
     srv.unref();
+    srv.on("error", () => resolve(null));
+    srv.listen(port, "127.0.0.1", () => {
+      srv.close(() => resolve(port));
+    });
+  });
+}
+
+/**
+ * Pick the port the UI will be served from.
+ *
+ * Stability matters more than "finding any free port": the renderer's localStorage (where every
+ * platform key and custom platform lives) is scoped to the page origin, so a changing port throws
+ * the user's settings away on each restart. We therefore always try PREFERRED_PORT first, and only
+ * fall back to an ephemeral port when it is genuinely occupied by something else.
+ */
+async function acquirePort() {
+  const stable = await tryPort(PREFERRED_PORT);
+  if (stable) return stable;
+
+  const srv = net.createServer();
+  srv.unref();
+  return new Promise((resolve, reject) => {
     srv.on("error", reject);
     srv.listen(0, "127.0.0.1", () => {
       const { port } = srv.address();
-      srv.close(() => resolve(port));
+      srv.close(() => {
+        // Warn loudly: settings will NOT survive a restart on this run.
+        log(`端口 ${PREFERRED_PORT} 被占用，临时改用 ${port}；本次运行的设置不会持久保存`);
+        resolve(port);
+      });
     });
   });
 }
@@ -114,7 +146,7 @@ async function startServer() {
   const serverDir = path.dirname(entry);
   const dataDir = path.join(app.getPath("userData"), "data");
   fs.mkdirSync(dataDir, { recursive: true });
-  const port = await getFreePort();
+  const port = await acquirePort();
 
   const ffmpegPath = resolveBinary(() => require("ffmpeg-static"));
   const ffprobePath = resolveBinary(() => require("@ffprobe-installer/ffprobe").path);
